@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Easy Booking</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="logo">Easy<span>Booking</span></div>
+      <nav class="nav">
+        <a href="/">Home</a>
+        <a href="/hotels">Hotels</a>
+        <a href="/bookings">Bookings</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <h1>Find the right stay in minutes</h1>
+      <p>Search trusted hotels, compare ratings, and manage your reservations in one account.</p>
+
+      <div class="hero-search">
+        <form action="/hotels" method="GET" class="hero-search-form">
+          <input type="text" name="q" placeholder="Search hotels, cities, amenities..." />
+          <button type="submit" class="btn">Search</button>
+        </form>
+      </div>
+
+      <div style="margin-top: 18px; display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+        <a href="/hotels" class="btn">Browse hotels</a>
+        <a href="/bookings" class="btn btn-outline">My bookings</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="container">
+      <h2>Why Travelers Choose EasyBooking</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <h3>Verified properties</h3>
+          <p>Every listing includes detailed descriptions, amenities, and photos.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Transparent ratings</h3>
+          <p>See current scores and submit your own rating after sign-in.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Fast booking flow</h3>
+          <p>Create, edit, and track reservations from desktop, tablet, or phone.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <p>Copyright 2026 Easy Booking. All rights reserved.</p>
+    </div>
+  </footer>
+
+<script src='/nav-auth.js'></script>
+</body>
+</html>

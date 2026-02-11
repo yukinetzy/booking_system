@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hotel Details - Easy Booking</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <header class="header">
+    <div class="container">
+      <div class="logo">Easy<span>Booking</span></div>
+      <nav class="nav">
+        <a href="/">Home</a>
+        <a href="/hotels">Hotels</a>
+        <a href="/bookings">Bookings</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/login">Login</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="features">
+    <div class="container">
+      <h2 style="text-align:center;">Hotel #{{id}}</h2>
+
+      <div class="auth-block" style="max-width: 900px; margin: 10px auto 24px;">
+        {{authControls}}
+      </div>
+
+      <div style="max-width: 900px; margin: 0 auto;">
+        <div class="feature-card" style="padding: 30px; text-align:left;">
+          <img class="hotel-cover hotel-cover-detail" src="{{imageUrl}}" alt="{{title}}" />
+
+          <h3 style="margin-top: 18px;">{{title}}</h3>
+          <p>{{description}}</p>
+
+          <div class="rating-row" style="margin-top: 12px;">
+            <div class="rating-stars">{{ratingStars}}</div>
+            <span class="rating-value">{{rating}}/5</span>
+            <span class="rating-count">{{ratingVotes}}</span>
+          </div>
+
+          {{ratingNotice}}
+
+          <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
+            <h4>Hotel Information</h4>
+            <ul style="list-style: none; padding: 0; line-height: 2;">
+              <li><strong>Price:</strong> {{price}}</li>
+              <li><strong>Location:</strong> {{location}}</li>
+              <li><strong>Address:</strong> {{address}}</li>
+              <li><strong>Available rooms:</strong> {{available_rooms}}</li>
+              <li><strong>Amenities:</strong> {{amenities}}</li>
+            </ul>
+          </div>
+
+          <div style="margin-top: 20px;">
+            {{ratingActions}}
+          </div>
+
+          <div class="hotel-card-actions" style="margin-top: 26px; justify-content:center;">
+            {{bookButton}}
+            {{manageButtons}}
+            <a href="/hotels" class="btn btn-outline">Back to list</a>
+          </div>
+
+          <div
+            id="hotelPresenceConfig"
+            data-enabled="{{presenceEnabled}}"
+            data-hotel-id="{{id}}"
+            data-heartbeat-seconds="{{heartbeatEvery}}"
+          ></div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <p>Copyright 2026 Easy Booking. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/guest-booking.js"></script>
+  <script src="/hotel-presence-heartbeat.js"></script>
+
+<script src='/nav-auth.js'></script>
+</body>
+</html>
+

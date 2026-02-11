@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact - Easy Booking</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<header class="header">
+  <div class="container">
+    <div class="logo">Easy<span>Booking</span></div>
+    <nav class="nav">
+      <a href="/">Home</a>
+      <a href="/hotels">Hotels</a>
+      <a href="/bookings">Bookings</a>
+      <a href="/about">About</a>
+      <a href="/contact">Contact</a>
+      <a href="/login">Login</a>
+      <a href="/register">Register</a>
+    </nav>
+  </div>
+</header>
+
+<section class="features">
+  <div class="container">
+    <h2 style="text-align:center;">Contact Us</h2>
+    <p style="text-align:center; max-width:600px; margin: 0 auto 26px;">
+      Share your request and our support team will help you choose the right stay.
+    </p>
+
+    <div class="form-card">
+      <form action="/contact" method="POST" class="contact-form">
+        {{successMessage}}
+        <p class="error-message">{{errorMessage}}</p>
+
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" name="name" value="{{nameValue}}" placeholder="Your full name" required />
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone</label>
+          <input type="tel" id="phone" name="phone" value="{{phoneValue}}" placeholder="+7XXXXXXXXXX" required />
+        </div>
+
+        <div class="form-group">
+          <label for="city">City</label>
+          <input type="text" id="city" name="city" value="{{cityValue}}" placeholder="Almaty / Astana / Shymkent" required />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" value="{{emailValue}}" placeholder="example@mail.com" required />
+        </div>
+
+        <div class="form-group">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" rows="5" placeholder="Tell us your booking request" required>{{messageValue}}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-full">Send Request</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p>Copyright 2026 Easy Booking. All rights reserved.</p>
+  </div>
+</footer>
+
+
+<script src='/nav-auth.js'></script>
+</body>
+</html>
+

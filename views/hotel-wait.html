@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hotel Wait Room - Easy Booking</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <header class="header">
+    <div class="container">
+      <div class="logo">Easy<span>Booking</span></div>
+      <nav class="nav">
+        <a href="/">Home</a>
+        <a href="/hotels">Hotels</a>
+        <a href="/bookings">Bookings</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="features">
+    <div class="container">
+      <h2 style="text-align:center;">Hotel Is Busy</h2>
+
+      <div class="auth-block" style="max-width: 900px; margin: 10px auto 24px;">
+        {{authControls}}
+      </div>
+
+      <div class="form-card" style="max-width: 760px;">
+        <h3 style="text-align:center; margin-bottom: 8px;">{{hotelTitle}}</h3>
+        <p id="hotelWaitStatus" class="notice notice-warning" style="margin-top: 16px;">
+          The hotel page is busy right now. Active users: {{activeUsers}}/{{capacity}}. This page will update automatically.
+        </p>
+        <p style="margin-top: 16px;">
+          You are in the waiting room. As soon as one slot is free, you will be redirected automatically.
+        </p>
+        <div style="margin-top: 16px; display:flex; gap:10px; flex-wrap:wrap;">
+          <a href="/hotels" class="btn btn-outline">Back to hotels</a>
+          <a href="/hotels/{{hotelId}}" class="btn">Try now</a>
+        </div>
+      </div>
+
+      <div
+        id="hotelWaitConfig"
+        data-hotel-id="{{hotelId}}"
+        data-poll-seconds="{{pollSeconds}}"
+      ></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <p>Copyright 2026 Easy Booking. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/hotel-presence-wait.js"></script>
+  <script src='/nav-auth.js'></script>
+</body>
+</html>

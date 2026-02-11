@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hotels - Easy Booking</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<header class="header">
+  <div class="container">
+    <div class="logo">Easy<span>Booking</span></div>
+    <nav class="nav">
+      <a href="/">Home</a>
+      <a href="/hotels">Hotels</a>
+      <a href="/bookings">Bookings</a>
+      <a href="/about">About</a>
+      <a href="/contact">Contact</a>
+      <a href="/login">Login</a>
+      <a href="/register">Register</a>
+    </nav>
+  </div>
+</header>
+
+<section class="features hotels-page">
+  <div class="container">
+    <h2 style="text-align:center;">All Hotels</h2>
+
+    <div class="auth-block">
+      {{authControls}}
+    </div>
+
+    <div style="text-align:center; margin: 14px 0 22px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      {{manageAction}}
+      <a class="btn btn-outline" href="/bookings">My bookings</a>
+    </div>
+
+    <div id="guestBookingNotice" class="toast-notice" hidden></div>
+    {{bookingNotice}}
+
+    <div class="hotels-layout">
+      <aside class="hotels-sidebar form-card">
+        <form action="/hotels" method="GET" class="contact-form">
+          <div class="form-group">
+            <label for="q">Search</label>
+            <input type="text" id="q" name="q" value="{{q}}" placeholder="Hotel, city, amenity..." />
+          </div>
+
+          <div class="form-group">
+            <label for="city">City</label>
+            <select id="city" name="city">
+              {{cityOptions}}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="minPrice">Min price (KZT)</label>
+            <input type="number" id="minPrice" name="minPrice" value="{{minPrice}}" placeholder="0" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label for="maxPrice">Max price (KZT)</label>
+            <input type="number" id="maxPrice" name="maxPrice" value="{{maxPrice}}" placeholder="200000" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label for="minRating">Rating</label>
+            <select id="minRating" name="minRating">
+              {{ratingOptions}}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="sort">Sort</label>
+            <select id="sort" name="sort">
+              {{sortOptions}}
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-full">Apply filters</button>
+        </form>
+      </aside>
+
+      <div class="hotels-content">
+        <div style="margin: 0 0 12px;">
+          {{paginationBar}}
+        </div>
+
+        <div class="features-grid hotels-grid" style="margin-top: 20px;">
+          {{results}}
+        </div>
+
+        <div style="margin: 20px 0 0;">
+          {{paginationBar}}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p>Copyright 2026 Easy Booking. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="/guest-booking.js"></script>
+
+<script src='/nav-auth.js'></script>
+</body>
+</html>
+

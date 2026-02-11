@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications - Easy Booking</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="logo">Easy<span>Booking</span></div>
+      <nav class="nav">
+        <a href="/">Home</a>
+        <a href="/hotels">Hotels</a>
+        <a href="/bookings">Bookings</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="features">
+    <div class="container">
+      <h2 style="text-align:center;">Notifications</h2>
+
+      <div class="auth-block" style="max-width: 900px; margin: 10px auto 20px;">
+        {{authControls}}
+      </div>
+
+      <div id="notificationsApp" class="form-card notifications-card" style="max-width: 900px;">
+        <div class="notifications-header">
+          <p>You have <strong id="notificationsUnreadCount">0</strong> unread notification(s).</p>
+          <button id="notificationsReadAllButton" type="button" class="btn btn-outline btn-small">Mark all as read</button>
+        </div>
+        <div id="notificationsList" class="notifications-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <p>Copyright 2026 Easy Booking. All rights reserved.</p>
+    </div>
+  </footer>
+
+<script src='/nav-auth.js'></script>
+<script src='/notifications.js'></script>
+</body>
+</html>

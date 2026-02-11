@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Details - Easy Booking</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<header class="header">
+  <div class="container">
+    <div class="logo">Easy<span>Booking</span></div>
+    <nav class="nav">
+      <a href="/">Home</a>
+      <a href="/hotels">Hotels</a>
+      <a href="/bookings">Bookings</a>
+      <a href="/about">About</a>
+      <a href="/contact">Contact</a>
+      <a href="/login">Login</a>
+    </nav>
+  </div>
+</header>
+
+<section class="features">
+  <div class="container">
+    <h2 style="text-align:center;">Booking #{{id}}</h2>
+
+    <div class="auth-block" style="max-width: 800px; margin: 10px auto 24px;">
+      {{authControls}}
+    </div>
+
+    <div style="max-width: 800px; margin: 0 auto;">
+      <div class="feature-card" style="padding: 40px; text-align:left;">
+        <h3>{{hotelTitle}}</h3>
+
+        <ul style="list-style: none; padding: 0; line-height: 2; margin-top: 16px;">
+          <li><strong>Location:</strong> {{hotelLocation}}</li>
+          <li><strong>Customer:</strong> {{userEmail}}</li>
+          <li><strong>Check-in:</strong> {{checkIn}}</li>
+          <li><strong>Check-out:</strong> {{checkOut}}</li>
+          <li><strong>Guests:</strong> {{guests}}</li>
+          <li><strong>Notes:</strong> {{notes}}</li>
+        </ul>
+
+        <div style="margin-top: 24px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+          {{actionButtons}}
+          <a href="/bookings" class="btn btn-outline">Back to bookings</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p>Copyright 2026 Easy Booking. All rights reserved.</p>
+  </div>
+</footer>
+
+
+<script src='/nav-auth.js'></script>
+</body>
+</html>
+

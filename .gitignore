@@ -1,0 +1,68 @@
+# Go binaries for running services and CLI tools
+/cmd/*/bin
+/bin
+*.exe
+*.exe~
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Go build cache
+.cache/
+go.sum.bak
+
+# IDE and Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment configuration (contains sensitive data)
+.env
+.env.local
+.env.*.local
+
+# Node.js and npm
+node_modules/
+package-lock.json
+npm-debug.log
+yarn-error.log
+dist/
+build/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Database files and backups
+*.db
+*.sqlite
+*.sqlite3
+*.bak
+mongo_data/
+data/
+
+# OS specific
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+logs/
+*.log
+
+# Dependencies cache
+vendor/
+
+# Build outputs
+dist/
+release/
+
+# Coverage reports
+coverage/
+*.coverprofile

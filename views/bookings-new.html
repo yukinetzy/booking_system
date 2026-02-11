@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Booking - Easy Booking</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="logo">Easy<span>Booking</span></div>
+      <nav class="nav">
+        <a href="/">Home</a>
+        <a href="/hotels">Hotels</a>
+        <a href="/bookings">Bookings</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="features">
+    <div class="container">
+      <h2 style="text-align:center;">Create Booking</h2>
+
+      <div class="auth-block">
+        {{authControls}}
+      </div>
+
+      <div class="form-card" style="max-width: 760px;">
+        <form id="bookingForm" method="POST" action="/bookings" class="contact-form">
+          <p class="error-message">{{errorMessage}}</p>
+
+          <div class="form-group">
+            <label>Room</label>
+            <select name="hotelId" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px;">
+              {{hotelOptions}}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Check-in date</label>
+            <input type="date" name="checkIn" value="{{checkIn}}" min="{{todayDate}}" required />
+          </div>
+
+          <div class="form-group">
+            <label>Check-out date</label>
+            <input type="date" name="checkOut" value="{{checkOut}}" min="{{todayDate}}" required />
+          </div>
+
+          <div class="form-group">
+            <label>Guests</label>
+            <input type="number" name="guests" min="1" max="10" value="{{guests}}" required />
+          </div>
+
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea name="notes" rows="4" maxlength="400">{{notes}}</textarea>
+          </div>
+
+          <button type="submit" class="btn btn-full">Create booking</button>
+          <div style="margin-top: 10px; text-align:center;">
+            <a href="/bookings">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <p>Copyright 2026 Easy Booking. All rights reserved.</p>
+    </div>
+  </footer>
+
+<script src='/nav-auth.js'></script>
+<script src='/booking-dates.js'></script>
+<script src='/booking-availability.js'></script>
+</body>
+</html>
