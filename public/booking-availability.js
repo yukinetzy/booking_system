@@ -1,15 +1,11 @@
 ﻿(() => {
   const form = document.getElementById('bookingForm');
-  if (!form) {
-    return;
-  }
+  if (!form) return;
 
   const roomInput = form.querySelector('select[name="hotelId"], select[name="roomId"], select[name="room_id"]');
-  const checkInInput = form.querySelector('input[name="checkIn"]');
-  const checkOutInput = form.querySelector('input[name="checkOut"]');
-  if (!roomInput || !checkInInput || !checkOutInput) {
-    return;
-  }
+  const checkInInput = form.querySelector('input[name="checkIn"], input[name="check_in"]');
+  const checkOutInput = form.querySelector('input[name="checkOut"], input[name="check_out"]');
+  if (!roomInput || !checkInInput || !checkOutInput) return;
 
   const bookingIdFromData = (form.dataset.bookingId || '').trim();
   const bookingIdFromActionMatch = (form.getAttribute('action') || '').match(/\/bookings\/([a-f0-9]{24})(?:$|\/)/i);
@@ -31,30 +27,36 @@
   const popupActions = document.createElement('div');
   popupActions.className = 'booking-popup-actions';
 
-  const notifyButton = document.createElement('button');
-  notifyButton.type = 'button';
-  notifyButton.className = 'btn btn-outline btn-small';
-  notifyButton.textContent = 'Notify me when available';
-  popupActions.appendChild(notifyButton);
+  const notifyPriorityButton = document.createElement('button');
+  notifyPriorityButton.type = 'button';
+  notifyPriorityButton.className = 'btn btn-outline btn-small';
+  notifyPriorityButton.textContent = 'Priority notify';
+  notifyPriorityButton.hidden = true;
 
   const closeButton = document.createElement('button');
   closeButton.type = 'button';
   closeButton.className = 'btn btn-small';
   closeButton.textContent = 'Close';
+
+  popupActions.appendChild(notifyPriorityButton);
   popupActions.appendChild(closeButton);
 
   popup.appendChild(popupActions);
   document.body.appendChild(popup);
 
+  closeButton.addEventListener('click', () => {
+    hidePopup();
+  });
+
   let latestRequestId = 0;
   let latestAvailability = null;
 
-  const showPopup = (message, showNotifyButton, isSuccess = false) => {
+  const showPopup = (message, showPriorityButton, isSuccess = false) => {
     popup.hidden = false;
     popup.classList.add('visible');
     popup.classList.toggle('booking-popup-success', Boolean(isSuccess));
     popupMessage.textContent = message;
-    notifyButton.hidden = !showNotifyButton;
+    notifyPriorityButton.hidden = !showPriorityButton;
   };
 
   const hidePopup = () => {
@@ -62,12 +64,10 @@
     popup.classList.remove('booking-popup-success');
     popup.hidden = true;
     popupMessage.textContent = '';
-    notifyButton.hidden = true;
+    notifyPriorityButton.hidden = true;
   };
 
-  const hasFullRange = () => {
-    return Boolean(roomInput.value && checkInInput.value && checkOutInput.value);
-  };
+  const hasFullRange = () => Boolean(roomInput.value && checkInInput.value && checkOutInput.value);
 
   const checkAvailability = () => {
     if (!hasFullRange()) {
@@ -84,25 +84,20 @@
 
     latestRequestId += 1;
     const requestId = latestRequestId;
+
     const queryPayload = {
       room_id: roomInput.value,
       check_in: checkInInput.value,
       check_out: checkOutInput.value,
     };
-    if (excludeBookingId) {
-      queryPayload.exclude_booking_id = excludeBookingId;
-    }
+    if (excludeBookingId) queryPayload.exclude_booking_id = excludeBookingId;
 
     const query = new URLSearchParams(queryPayload);
 
-    fetch(`/api/bookings/availability?${query.toString()}`, {
-      credentials: 'same-origin',
-    })
+    fetch(`/api/bookings/availability?${query.toString()}`, { credentials: 'same-origin' })
       .then((response) => (response.ok ? response.json() : Promise.reject(new Error('request_failed'))))
       .then((data) => {
-        if (requestId !== latestRequestId) {
-          return;
-        }
+        if (requestId !== latestRequestId) return;
 
         if (data && data.available === true) {
           latestAvailability = true;
@@ -114,49 +109,55 @@
         showPopup('Room is occupied for selected dates.', true);
       })
       .catch(() => {
-        if (requestId !== latestRequestId) {
-          return;
-        }
-
+        if (requestId !== latestRequestId) return;
         latestAvailability = null;
         hidePopup();
       });
   };
 
-  const subscribeForNotification = () => {
-    if (!hasFullRange()) {
-      return;
-    }
+  const subscribePriority = () => {
+    if (!hasFullRange()) return;
 
-    notifyButton.disabled = true;
+    notifyPriorityButton.disabled = true;
+
     fetch('/api/notifications/subscribe', {
       method: 'POST',
       credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         room_id: roomInput.value,
         check_in: checkInInput.value,
         check_out: checkOutInput.value,
+        type: 'priority',
       }),
     })
       .then(async (response) => {
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
-          const message = payload && payload.message ? payload.message : 'Unable to create notification subscription.';
-          throw new Error(message);
+          const code = payload && payload.error ? payload.error : 'request_failed';
+          throw new Error(code);
         }
         return payload;
       })
-      .then(() => {
-        showPopup('Subscription saved. We will notify you when this room becomes available.', false, true);
+      .then((payload) => {
+        if (payload && payload.group_id) {
+          const groupInput = document.getElementById('groupId');
+          if (groupInput) groupInput.value = payload.group_id;
+        }
+
+        showPopup('Priority subscription saved. We will notify you first when the slot becomes available.', false, true);
       })
       .catch((error) => {
-        showPopup(error.message || 'Unable to create notification subscription.', true);
+        const msg =
+          error.message === 'priority_taken'
+            ? 'Priority slot is already taken by another user.'
+            : error.message === 'duplicate_subscription'
+            ? 'You already have an active subscription for these dates.'
+            : 'Unable to create priority notification subscription.';
+        showPopup(msg, true);
       })
       .finally(() => {
-        notifyButton.disabled = false;
+        notifyPriorityButton.disabled = false;
       });
   };
 
@@ -165,8 +166,7 @@
     node.addEventListener('input', checkAvailability);
   });
 
-  notifyButton.addEventListener('click', subscribeForNotification);
-  closeButton.addEventListener('click', hidePopup);
+  notifyPriorityButton.addEventListener('click', subscribePriority);
 
   form.addEventListener('submit', (event) => {
     if (latestAvailability === false) {

@@ -9,6 +9,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -17,66 +18,119 @@ const (
 	notificationsCollection = "notifications"
 )
 
-func (s *Store) SubscribeToWaitlist(ctx context.Context, userIDText, roomIDText, checkIn, checkOut string) (string, error) {
+func (s *Store) SubscribeToWaitlist(
+	ctx context.Context,
+	userIDText,
+	roomIDText,
+	checkIn,
+	checkOut,
+	waitlistType string,
+) (string, string, error) {
+	waitlistType = strings.ToLower(strings.TrimSpace(waitlistType))
+	if waitlistType == "" {
+		waitlistType = WaitlistMain
+	}
+	if waitlistType != WaitlistMain && waitlistType != WaitlistPriority {
+		return "", "", ErrInvalidWaitlistPayload
+	}
+
 	userID, err := primitive.ObjectIDFromHex(strings.TrimSpace(userIDText))
 	if err != nil {
-		return "", fmt.Errorf("%w: invalid user id", ErrInvalidWaitlistPayload)
+		return "", "", fmt.Errorf("%w: invalid user id", ErrInvalidWaitlistPayload)
 	}
 
 	roomID, err := primitive.ObjectIDFromHex(strings.TrimSpace(roomIDText))
 	if err != nil {
-		return "", fmt.Errorf("%w: invalid room id", ErrInvalidWaitlistPayload)
+		return "", "", fmt.Errorf("%w: invalid room id", ErrInvalidWaitlistPayload)
 	}
 
 	checkIn = strings.TrimSpace(checkIn)
 	checkOut = strings.TrimSpace(checkOut)
 	checkInDate, _, err := parseBookingDateRange(checkIn, checkOut)
 	if err != nil {
-		return "", fmt.Errorf("%w: %v", ErrInvalidWaitlistPayload, err)
+		return "", "", fmt.Errorf("%w: %v", ErrInvalidWaitlistPayload, err)
 	}
 	if isBeforeToday(checkInDate) {
-		return "", fmt.Errorf("%w: cannot subscribe for past dates", ErrInvalidWaitlistPayload)
+		return "", "", fmt.Errorf("%w: cannot subscribe for past dates", ErrInvalidWaitlistPayload)
 	}
 
-	now := time.Now().UTC()
-	filter := bson.M{
+	dupFilter := bson.M{
 		"userId":   userID,
 		"roomId":   roomID,
 		"checkIn":  checkIn,
 		"checkOut": checkOut,
+		"type":     waitlistType,
 		"isActive": true,
 	}
-
-	existingCount, err := s.collection(waitlistCollection).CountDocuments(ctx, filter)
+	dupCount, err := s.collection(waitlistCollection).CountDocuments(ctx, dupFilter)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	if existingCount > 0 {
-		return "", ErrDuplicateWaitlist
+	if dupCount > 0 {
+		return "", "", ErrDuplicateWaitlist
 	}
 
-	result, err := s.collection(waitlistCollection).InsertOne(ctx, bson.M{
+	if waitlistType == WaitlistPriority {
+		takenCount, err := s.collection(waitlistCollection).CountDocuments(ctx, bson.M{
+			"roomId":   roomID,
+			"checkIn":  checkIn,
+			"checkOut": checkOut,
+			"type":     WaitlistPriority,
+			"isActive": true,
+		})
+		if err != nil {
+			return "", "", err
+		}
+		if takenCount > 0 {
+			return "", "", ErrPriorityAlreadyTaken
+		}
+	}
+
+	now := time.Now().UTC()
+
+	var groupID primitive.ObjectID
+	if waitlistType == WaitlistPriority {
+		groupID = primitive.NewObjectID()
+	}
+
+	doc := bson.M{
 		"userId":    userID,
 		"roomId":    roomID,
 		"checkIn":   checkIn,
 		"checkOut":  checkOut,
+		"type":      waitlistType,
 		"isActive":  true,
 		"createdAt": now,
 		"updatedAt": now,
-	})
+	}
+
+	if waitlistType == WaitlistPriority {
+		doc["groupId"] = groupID
+	}
+
+	result, err := s.collection(waitlistCollection).InsertOne(ctx, doc)
+
 	if err != nil {
-		if IsDuplicateKeyError(err, "roomId") {
-			return "", ErrDuplicateWaitlist
+		if mongo.IsDuplicateKeyError(err) {
+			if waitlistType == WaitlistPriority {
+				return "", "", ErrPriorityAlreadyTaken
+			}
+			return "", "", ErrDuplicateWaitlist
 		}
-		return "", err
+		return "", "", err
 	}
 
 	insertedID, ok := result.InsertedID.(primitive.ObjectID)
 	if !ok {
-		return "", fmt.Errorf("%w: invalid waitlist id", ErrInvalidWaitlistPayload)
+		return "", "", fmt.Errorf("%w: invalid waitlist id", ErrInvalidWaitlistPayload)
 	}
 
-	return insertedID.Hex(), nil
+	gid := ""
+	if waitlistType == WaitlistPriority {
+		gid = groupID.Hex()
+	}
+	return insertedID.Hex(), gid, nil
+
 }
 
 func (s *Store) ProcessWaitlistForRoom(ctx context.Context, roomIDText string) (int64, error) {
@@ -90,80 +144,111 @@ func (s *Store) ProcessWaitlistForRoom(ctx context.Context, roomIDText string) (
 		return 0, nil
 	}
 
-	cursor, err := s.collection(waitlistCollection).Find(
-		ctx,
-		bson.M{"roomId": roomID, "isActive": true},
-		options.Find().SetSort(bson.D{{Key: "createdAt", Value: 1}}).SetLimit(300),
-	)
-	if err != nil {
-		return 0, err
-	}
-	defer cursor.Close(ctx)
-
-	subscriptions := make([]bson.M, 0)
-	if err := cursor.All(ctx, &subscriptions); err != nil {
-		return 0, err
-	}
-
 	createdNotifications := int64(0)
-	for _, subscription := range subscriptions {
-		subscriptionID, ok := subscription["_id"].(primitive.ObjectID)
-		if !ok {
-			continue
-		}
-		userID, ok := subscription["userId"].(primitive.ObjectID)
-		if !ok {
-			continue
-		}
 
-		checkIn := strings.TrimSpace(fmt.Sprint(subscription["checkIn"]))
-		checkOut := strings.TrimSpace(fmt.Sprint(subscription["checkOut"]))
-		if _, _, rangeErr := parseBookingDateRange(checkIn, checkOut); rangeErr != nil {
-			continue
-		}
-
-		conflict, conflictErr := s.hasBookingConflict(ctx, roomID, checkIn, checkOut, nil)
-		if conflictErr != nil {
-			return createdNotifications, conflictErr
-		}
-		if conflict {
-			continue
-		}
-
-		deactivateResult, deactivateErr := s.collection(waitlistCollection).UpdateOne(
+	processType := func(waitlistType string, stopAfterFirst bool) (int64, error) {
+		cursor, err := s.collection(waitlistCollection).Find(
 			ctx,
-			bson.M{"_id": subscriptionID, "isActive": true},
-			bson.M{"$set": bson.M{"isActive": false, "updatedAt": time.Now().UTC()}},
+			bson.M{"roomId": roomID, "isActive": true, "type": waitlistType},
+			options.Find().SetSort(bson.D{
+				{Key: "tyoe", Value: -1},
+				{Key: "createdAt", Value: 1},
+			}).SetLimit(300),
 		)
-		if deactivateErr != nil {
-			return createdNotifications, deactivateErr
+		if err != nil {
+			return createdNotifications, err
 		}
-		if deactivateResult.ModifiedCount == 0 {
-			continue
+		defer cursor.Close(ctx)
+
+		subscriptions := make([]bson.M, 0)
+		if err := cursor.All(ctx, &subscriptions); err != nil {
+			return createdNotifications, err
 		}
 
-		link := "/bookings/new?hotelId=" + roomID.Hex() + "&checkIn=" + url.QueryEscape(checkIn) + "&checkOut=" + url.QueryEscape(checkOut)
-		_, notificationErr := s.collection(notificationsCollection).InsertOne(ctx, bson.M{
-			"userId":    userID,
-			"title":     "Room is available now",
-			"text":      fmt.Sprintf("Room is now available for %s to %s.", checkIn, checkOut),
-			"link":      link,
-			"isRead":    false,
-			"createdAt": time.Now().UTC(),
-		})
-		if notificationErr != nil {
-			_, _ = s.collection(waitlistCollection).UpdateOne(
+		for _, subscription := range subscriptions {
+			subscriptionID, ok := subscription["_id"].(primitive.ObjectID)
+			if !ok {
+				continue
+			}
+			userID, ok := subscription["userId"].(primitive.ObjectID)
+			if !ok {
+				continue
+			}
+
+			checkIn := strings.TrimSpace(fmt.Sprint(subscription["checkIn"]))
+			checkOut := strings.TrimSpace(fmt.Sprint(subscription["checkOut"]))
+			if _, _, rangeErr := parseBookingDateRange(checkIn, checkOut); rangeErr != nil {
+				continue
+			}
+
+			conflict, conflictErr := s.hasBookingConflict(ctx, roomID, checkIn, checkOut, nil)
+			if conflictErr != nil {
+				return createdNotifications, conflictErr
+			}
+			if conflict {
+				continue
+			}
+
+			deactivateResult, deactivateErr := s.collection(waitlistCollection).UpdateOne(
 				ctx,
-				bson.M{"_id": subscriptionID},
-				bson.M{"$set": bson.M{"isActive": true, "updatedAt": time.Now().UTC()}},
+				bson.M{"_id": subscriptionID, "isActive": true},
+				bson.M{"$set": bson.M{"isActive": false, "updatedAt": time.Now().UTC()}},
 			)
-			return createdNotifications, notificationErr
+			if deactivateErr != nil {
+				return createdNotifications, deactivateErr
+			}
+			if deactivateResult.ModifiedCount == 0 {
+				continue
+			}
+
+			link := "/bookings/new?hotelId=" + roomID.Hex() +
+				"&checkIn=" + url.QueryEscape(checkIn) +
+				"&checkOut=" + url.QueryEscape(checkOut)
+
+			notificationDoc := bson.M{
+				"userId":    userID,
+				"title":     "Room is available now",
+				"text":      fmt.Sprintf("Room is now available for %s to %s.", checkIn, checkOut),
+				"link":      link,
+				"isRead":    false,
+				"createdAt": time.Now().UTC(),
+			}
+
+			if gid, ok := subscription["groupId"].(primitive.ObjectID); ok {
+				notificationDoc["groupId"] = gid
+			}
+
+			_, notificationErr := s.collection(notificationsCollection).InsertOne(ctx, notificationDoc)
+
+			if notificationErr != nil {
+
+				_, _ = s.collection(waitlistCollection).UpdateOne(
+					ctx,
+					bson.M{"_id": subscriptionID},
+					bson.M{"$set": bson.M{"isActive": true, "updatedAt": time.Now().UTC()}},
+				)
+				return createdNotifications, notificationErr
+			}
+
+			createdNotifications++
+
+			if stopAfterFirst {
+				return createdNotifications, nil
+			}
 		}
 
-		createdNotifications++
+		return createdNotifications, nil
 	}
 
-	return createdNotifications, nil
+	if _, err := processType(WaitlistPriority, true); err != nil {
+		return createdNotifications, err
+	}
+	if createdNotifications > 0 {
+		return createdNotifications, nil
+	}
+
+	_, err = processType(WaitlistMain, false)
+	return createdNotifications, err
 }
 
 func (s *Store) ListNotifications(ctx context.Context, userIDText string, limit int64) ([]bson.M, int64, error) {

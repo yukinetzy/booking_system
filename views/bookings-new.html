@@ -32,6 +32,8 @@
         <form id="bookingForm" method="POST" action="/bookings" class="contact-form">
           <p class="error-message">{{errorMessage}}</p>
 
+          <input type="hidden" id="groupId" name="groupId" value="{{groupId}}"> /* Hidden input to store the group ID for priority notifications */
+
           <div class="form-group">
             <label>Room</label>
             <select name="hotelId" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px;">

@@ -55,7 +55,10 @@ func EnsureStartupMaintenance(ctx context.Context, database *mongo.Database) err
 				},
 				Options: options.Index().
 					SetUnique(true).
-					SetPartialFilterExpression(bson.M{"isActive": true}),
+					SetPartialFilterExpression(bson.M{
+						"isActive": true,
+						"type":     "main",
+					}),
 			},
 		},
 		{
@@ -63,9 +66,16 @@ func EnsureStartupMaintenance(ctx context.Context, database *mongo.Database) err
 			model: mongo.IndexModel{
 				Keys: bson.D{
 					{Key: "roomId", Value: 1},
+					{Key: "checkIn", Value: 1},
+					{Key: "checkOut", Value: 1},
 					{Key: "isActive", Value: 1},
-					{Key: "createdAt", Value: 1},
 				},
+				Options: options.Index().
+					SetUnique(true).
+					SetPartialFilterExpression(bson.M{
+						"isActive": true,
+						"type":     "priority",
+					}),
 			},
 		},
 		{

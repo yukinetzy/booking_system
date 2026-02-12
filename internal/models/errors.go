@@ -15,6 +15,7 @@ var (
 	ErrNotificationNotFound       = errors.New("notification not found")
 	ErrUnauthorizedNotificationOp = errors.New("unauthorized notification operation")
 	ErrInvalidPresencePayload     = errors.New("invalid presence payload")
+	ErrPriorityAlreadyTaken       = errors.New("priority waitlist already taken")
 )
 
 func IsDuplicateKeyError(err error, key string) bool {

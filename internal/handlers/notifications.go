@@ -63,7 +63,7 @@ func (a *App) subscribeNotificationsAPI(w http.ResponseWriter, r *http.Request) 
 		return nil
 	}
 
-	waitlistID, subscribeErr := a.Store.SubscribeToWaitlist(
+	waitlistID, groupID, subscribeErr := a.Store.SubscribeToWaitlist(
 		r.Context(),
 		user.ID,
 		roomID,
@@ -94,10 +94,17 @@ func (a *App) subscribeNotificationsAPI(w http.ResponseWriter, r *http.Request) 
 		return subscribeErr
 	}
 
-	a.writeJSON(w, http.StatusCreated, map[string]string{
+	response := map[string]any{
 		"id":      waitlistID,
 		"message": "Subscription created",
-	})
+	}
+
+	if groupID != "" {
+		response["group_id"] = groupID
+	}
+
+	a.writeJSON(w, http.StatusCreated, response)
+
 	return nil
 }
 

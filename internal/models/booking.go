@@ -83,6 +83,7 @@ func (s *Store) ListBookingsWithDetails(ctx context.Context, filter bson.M, skip
 					"notes":         1,
 					"createdAt":     1,
 					"updatedAt":     1,
+					"groupId":       1,
 					"hotelTitle":    "$hotel.title",
 					"hotelLocation": "$hotel.location",
 					"userEmail":     "$user.email",
@@ -161,6 +162,7 @@ func (s *Store) FindBookingByIDWithDetails(ctx context.Context, id string) (bson
 			"notes":         1,
 			"createdAt":     1,
 			"updatedAt":     1,
+			"groupId":       1,
 			"hotelTitle":    "$hotel.title",
 			"hotelLocation": "$hotel.location",
 			"userEmail":     "$user.email",
@@ -245,6 +247,12 @@ func (s *Store) CreateBooking(ctx context.Context, booking bson.M, userID string
 	doc["status"] = "confirmed"
 	doc["createdAt"] = now
 	doc["updatedAt"] = now
+
+	if groupRaw, ok := booking["groupId"]; ok {
+		if gid, err := primitive.ObjectIDFromHex(strings.TrimSpace(fmt.Sprint(groupRaw))); err == nil {
+			doc["groupId"] = gid
+		}
+	}
 
 	err = s.runAtomically(ctx, func(txCtx context.Context) error {
 		conflict, conflictErr := s.hasBookingConflict(txCtx, roomID, checkIn, checkOut, nil)
@@ -353,6 +361,12 @@ func (s *Store) UpdateBookingByID(ctx context.Context, id string, booking bson.M
 		for key, value := range booking {
 			updateFields[key] = value
 		}
+		if groupRaw, ok := booking["groupId"]; ok {
+			if gid, err := primitive.ObjectIDFromHex(strings.TrimSpace(fmt.Sprint(groupRaw))); err == nil {
+				updateFields["groupId"] = gid
+			}
+		}
+
 		delete(updateFields, "room_id")
 		delete(updateFields, "status")
 		updateFields["roomId"] = nextRoomID
@@ -374,6 +388,7 @@ func (s *Store) UpdateBookingByID(ctx context.Context, id string, booking bson.M
 	}
 
 	return matchedCount, nil
+
 }
 
 func (s *Store) DeleteBookingByID(ctx context.Context, id string) (int64, error) {
@@ -711,4 +726,35 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+// FindBookingByGroupIDAndUserID finds active booking by groupId + userId
+func (s *Store) FindBookingByGroupIDAndUserID(
+	ctx context.Context,
+	groupIDText string,
+	userIDText string,
+) (bson.M, error) {
+	groupID, err := primitive.ObjectIDFromHex(strings.TrimSpace(groupIDText))
+	if err != nil {
+		return nil, nil
+	}
+	userID, err := primitive.ObjectIDFromHex(strings.TrimSpace(userIDText))
+	if err != nil {
+		return nil, nil
+	}
+
+	var result bson.M
+	err = s.collection(bookingsCollection).FindOne(ctx, bson.M{
+		"groupId": groupID,
+		"userId":  userID,
+		"status":  bson.M{"$ne": "canceled"},
+	}).Decode(&result)
+
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

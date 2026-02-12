@@ -75,6 +75,7 @@ func (a *App) Router() http.Handler {
 
 		api.Group(func(protected chi.Router) {
 			protected.Use(middleware.RequireAuth)
+			protected.Get("/bookings/fallback", a.withError(a.getFallbackBookingByGroupIDAPI))
 			protected.Get("/bookings/availability", a.withError(a.getBookingAvailabilityAPI))
 			protected.Get("/bookings", a.withError(a.getBookingsAPI))
 			protected.Get("/bookings/{id}", a.withError(a.getBookingByIDAPI))

@@ -156,6 +156,7 @@ func (a *App) renderNewBookingPage(w http.ResponseWriter, r *http.Request) error
 		"checkOut":     strings.TrimSpace(r.URL.Query().Get("checkOut")),
 		"guests":       "1",
 		"notes":        "",
+		"groupId":      strings.TrimSpace(r.URL.Query().Get("groupId")),
 		"todayDate":    todayISODate(),
 	})
 }
@@ -750,4 +751,30 @@ func defaultIfEmpty(value, fallback string) string {
 		return fallback
 	}
 	return value
+}
+
+func (a *App) getFallbackBookingByGroupIDAPI(w http.ResponseWriter, r *http.Request) error {
+	groupIDText := strings.TrimSpace(r.URL.Query().Get("group_id"))
+	if groupIDText == "" {
+		a.writeJSON(w, http.StatusBadRequest, map[string]string{"error": "group_id required"})
+		return nil
+	}
+
+	user := session.CurrentUser(r)
+	if user == nil {
+		a.writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return nil
+	}
+
+	booking, err := a.Store.FindBookingByGroupIDAndUserID(r.Context(), groupIDText, user.ID)
+	if err != nil {
+		return err
+	}
+	if booking == nil {
+		a.writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		return nil
+	}
+
+	a.writeJSON(w, http.StatusOK, booking)
+	return nil
 }
