@@ -328,6 +328,15 @@ func ValidateBookingPayload(payload map[string]any, partial bool) ([]string, bso
 		}
 	}
 
+	if hasOwn(payload, "groupId") {
+		groupText := ToTrimmedString(payload["groupId"])
+		if groupText != "" {
+			if groupOID, err := primitive.ObjectIDFromHex(groupText); err == nil {
+				booking["groupId"] = groupOID
+			}
+		}
+	}
+
 	if partial && len(booking) == 0 {
 		errors = append(errors, "No valid fields provided")
 	}
