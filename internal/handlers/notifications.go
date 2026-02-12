@@ -49,19 +49,45 @@ func (a *App) subscribeNotificationsAPI(w http.ResponseWriter, r *http.Request) 
 		utils.ToTrimmedString(payload["checkOut"]),
 	)
 
-	waitlistID, subscribeErr := a.Store.SubscribeToWaitlist(r.Context(), user.ID, roomID, checkIn, checkOut)
+	waitlistType := strings.ToLower(
+		utils.ToTrimmedString(payload["type"]),
+	)
+	if waitlistType == "" {
+		waitlistType = models.WaitlistMain
+	}
+
+	if waitlistType != models.WaitlistMain && waitlistType != models.WaitlistPriority {
+		a.writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "invalid_waitlist_type",
+		})
+		return nil
+	}
+
+	waitlistID, subscribeErr := a.Store.SubscribeToWaitlist(
+		r.Context(),
+		user.ID,
+		roomID,
+		checkIn,
+		checkOut,
+		waitlistType,
+	)
+
 	if subscribeErr != nil {
 		if errors.Is(subscribeErr, models.ErrDuplicateWaitlist) {
 			a.writeJSON(w, http.StatusConflict, map[string]string{
-				"error":   "duplicate_subscription",
-				"message": "You already have an active notification for this room and date range",
+				"error": "duplicate_subscription",
+			})
+			return nil
+		}
+		if errors.Is(subscribeErr, models.ErrPriorityAlreadyTaken) {
+			a.writeJSON(w, http.StatusConflict, map[string]string{
+				"error": "priority_taken",
 			})
 			return nil
 		}
 		if errors.Is(subscribeErr, models.ErrInvalidWaitlistPayload) {
 			a.writeJSON(w, http.StatusBadRequest, map[string]string{
-				"error":   "validation_error",
-				"message": subscribeErr.Error(),
+				"error": "validation_error",
 			})
 			return nil
 		}
